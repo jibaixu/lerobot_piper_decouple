@@ -53,10 +53,7 @@ for camera_name in CAMERA_NAMES:
 
 # Create the robot and teleoperator configurations
 robot_config = PIPERFollowerConfig(
-    cameras={
-        CAMERA_NAMES[0]: camera_configs[0],
-        CAMERA_NAMES[1]: camera_configs[1],
-    }
+    cameras=CAMERA_NAME_TO_SERIAL
 )
 teleop_config = PIPERLeaderConfig()
 
