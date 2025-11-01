@@ -11,54 +11,54 @@ from robot.teleoperators.piper.config_piper_leader import PIPERLeaderConfig
 from robot.teleoperators.piper.piper_leader import PIPERLeader
 
 
+USE_TELEOPERATOR = False
 FPS = 30
 CAMERA_WIDTH = 640
 CAMERA_HEIGHT = 480
-CAMERA_NAMES = ["image", "wrist_image"]
+CAMERA_NAMES = ["image", "wrist_image_left", "wrist_image_right"]
 CAMERA_NAME_TO_SERIAL = {
     "image": "317422074519",
-    "wrist_image": "317422075321",
+    "wrist_image_left": "317422074290",
+    "wrist_image_right": "317422075321",
 }
 
-camera_configs = []
+camera_configs = {}
 for camera_name in CAMERA_NAMES:
-    camera_configs.append(
-        RealSenseCameraConfig(
+    camera_configs[camera_name] = RealSenseCameraConfig(
             serial_number_or_name=CAMERA_NAME_TO_SERIAL[camera_name],
             width=CAMERA_WIDTH,
             height=CAMERA_HEIGHT,
             fps=FPS,
         )
-    )
 
 # Create the robot and teleoperator configurations
 robot_config = PIPERFollowerConfig(
-    cameras=CAMERA_NAME_TO_SERIAL
+    cameras=camera_configs
 )
-teleop_config = PIPERLeaderConfig()
-
 robot = PIPERFollower(robot_config)
-teleop = PIPERLeader(teleop_config)
-
-# To connect you already should have this script running on LeKiwi: `python -m lerobot.robots.lekiwi.lekiwi_host --robot.id=my_awesome_kiwi`
 robot.connect()
-teleop.connect()
+
+if USE_TELEOPERATOR:
+    teleop_config = PIPERLeaderConfig()
+    teleop = PIPERLeader(teleop_config)
+    teleop.connect()
 
 _init_rerun(session_name="piper_teleop_session")
 
-if not robot.is_connected or not teleop.is_connected:
+if not robot.is_connected or (USE_TELEOPERATOR and not teleop.is_connected):
     raise ValueError("Robot, leader arm of keyboard is not connected!")
 
 display_len = max(len(key) for key in robot.action_features)
 start = time.perf_counter()
 while True:
     loop_start = time.perf_counter()
-    action = teleop.get_action()
 
     observation = robot.get_observation()
+    action = teleop.get_action() if USE_TELEOPERATOR else {k: v for k, v in observation.items() if k.endswith(".pos")}
     log_rerun_data(observation, action)
 
-    robot.send_action(action)
+    if USE_TELEOPERATOR:
+        robot.send_action(action)
     dt_s = time.perf_counter() - loop_start
     busy_wait(1 / FPS - dt_s)
 
