@@ -46,7 +46,7 @@ if USE_TELEOPERATOR:
 _init_rerun(session_name="piper_teleop_session")
 
 if not robot.is_connected or (USE_TELEOPERATOR and not teleop.is_connected):
-    raise ValueError("Robot, leader arm of keyboard is not connected!")
+    raise ValueError("Robot is not connected!")
 
 display_len = max(len(key) for key in robot.action_features)
 start = time.perf_counter()
